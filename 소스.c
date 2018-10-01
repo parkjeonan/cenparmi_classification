@@ -101,26 +101,26 @@ void setBatch(int iteration, int SIZE_SAMPLES) {
 	}
 
 	if (iteration == 1) {
-		shuffling(iteration*100, SIZE_SAMPLES);
+		shuffling(iteration * 100, SIZE_SAMPLES);
 	}
-	
+
 	if (batch_x == NULL) {
 		batch_x = (double **)calloc(BATCH_SIZE, sizeof(double *));
 	}
-	
+
 	for (int i = 0; i < BATCH_SIZE; i++) {
 		if (batch_x[i] == NULL) {
 			batch_x[i] = (double *)calloc(SIZE_FEATURES + 1, sizeof(double));
 		}
-		
+
 		batch_x[i][0] = 1.0; //바이어스
 		memcpy(batch_x[i] + 1, datas[i / 10][batchs_index[i / 10][i % 10]], SIZE_FEATURES * sizeof(double));
-		
+
 		int tmp_index = SIZE_SAMPLES - (iteration * (BATCH_SIZE / SIZE_CLASSES)) + (i % 10);
-		
+
 		batchs_index[i / 10][i % 10] = batchs_index[i / 10][tmp_index];
 	}
-	
+
 	setBatchY();
 }
 double randomF(void)
@@ -136,24 +136,24 @@ double randomF(void)
 void init(double V[101][21], double W[21][10])
 {
 
-	
-		for (int j = 0; j < 101; j++) {
-			for (int k = 0; k < 21; k++) {
-				V[j][k] = randomF();
-				//printf("%lf ", V[j][k]);
-			}
-			//printf("\n");
+
+	for (int j = 0; j < 101; j++) {
+		for (int k = 0; k < 21; k++) {
+			V[j][k] = randomF();
+			//printf("%lf ", V[j][k]);
 		}
-		//printf("\n\n");
-		for (int j = 0; j < 21; j++) {
-			for (int k = 0; k < 10; k++) {
-				W[j][k] = randomF();
-				//printf("%lf ", W[j][k]);
-			}
-			//printf("\n");
+		//printf("\n");
+	}
+	//printf("\n\n");
+	for (int j = 0; j < 21; j++) {
+		for (int k = 0; k < 10; k++) {
+			W[j][k] = randomF();
+			//printf("%lf ", W[j][k]);
 		}
-		//printf("\n\n");
-	
+		//printf("\n");
+	}
+	//printf("\n\n");
+
 
 
 }
@@ -189,7 +189,7 @@ int main(int argc, const char * argv[]) {
 
 	srand((unsigned int)time(NULL));
 
-	readTrainFile("C:\\Users\\210.117.128.200\\Desktop\\train.txt", SIZE_SAMPLES_train);
+	readTrainFile("C:\\Users\\janpa\\Desktop\\train.txt", SIZE_SAMPLES_train);
 
 	scanf("%lf", &input_accuracy);
 
@@ -201,7 +201,7 @@ int main(int argc, const char * argv[]) {
 	init(V, W);
 
 
-	while (epoch<70) {
+	while (epoch<800) {
 		int a = 0;
 		double acc = 0; //0으로 변경
 		printf("[%d epoch] training...\n", epoch);
@@ -316,7 +316,7 @@ int main(int argc, const char * argv[]) {
 					if (batch == 99) {
 						for (int m = 0; m < 10; m++) {
 							aver_deriv_W[m] = aver_deriv_W[m] / 100;
-							//printf("%lf ", aver_deriv_W[m]);
+							//("%lf ", aver_deriv_W[m]);
 						}
 
 						//printf("\n");
@@ -325,7 +325,7 @@ int main(int argc, const char * argv[]) {
 
 						for (int p = 0; p < 21; p++) {
 							for (int k = 0; k < 10; k++) {
-								W[p][k] = 100 * aver_deriv_W[k] * W[p][k];
+								W[p][k] = 10 * aver_deriv_W[k] * W[p][k];
 
 								Z_error[p] += aver_deriv_W[k] * W[p][k];
 
@@ -391,21 +391,22 @@ int main(int argc, const char * argv[]) {
 
 
 				if (correct >= input_accuracy) {
-				//	printf("%d\n", correct);
+					//	printf("%d\n", correct);
 
 					break;
 				}
 			}
-			
+
 		}
 		epoch++;
-	
+
 
 
 	}
 
-	readTrainFile("C:\\Users\\210.117.128.200\\Desktop\\test.txt", SIZE_SAMPLES_test);
-
+	readTrainFile("C:\\Users\\janpa\\Desktop\\test.txt", SIZE_SAMPLES_test);
+	
+	
 	
 	iter = SIZE_CLASSES * SIZE_SAMPLES_test / BATCH_SIZE;
 
@@ -420,24 +421,37 @@ int main(int argc, const char * argv[]) {
 
 		int correct = 0;
 		int sum = 0;
-		
+
 		setBatch(i, SIZE_SAMPLES_test);
-		
+
 		//forward
 		//while (1) {
 		for (int batch = 0; batch < 100; batch++) {
-				//printf("%d\n", batch);
-						
+			//printf("%d\n", batch);
+
+
+			//for (int y = 0; y < 10; y++) {
+			//	printf("%lf ", batch_y[batch][y]);
+
+			//}
+			//("\n");
+			//for (int y = 0; y < 101; y++) {
+//printf("%lf ", batch_x[batch][y]);
+
+			//}
+//printf("\n\n");
+
+
 			for (int k = 0; k < 20; k++) {
 				for (int j = 0; j < 101; j++) {
 					Z[batch][k] += batch_x[batch][j] * V[j][k];
-					
+
 				}
 				if (k == 0) {
 					Z_sigmoid[batch][k] = 1;
 				}
 				Z_sigmoid[batch][k + 1] = sigmoid(Z[batch][k]);
-				//printf("%lf ", Z_sigmoid[batch][k]);
+				//("%lf ", Z_sigmoid[batch][k]);
 			}
 			//printf("\n\n");
 			for (int k = 0; k < 10; k++) {
@@ -445,8 +459,8 @@ int main(int argc, const char * argv[]) {
 					Y[batch][k] += Z_sigmoid[batch][j] * W[j][k];
 					//printf("%lf ", W[j][k]);
 				}
-					//printf("\n\n");
-					//printf("%lf ", Y[batch][k]);
+				//printf("\n\n");
+				//printf("%lf ", Y[batch][k]);
 			}
 			//printf("\n\n");
 
@@ -462,10 +476,10 @@ int main(int argc, const char * argv[]) {
 						max[batch] = Y[batch][k];
 					}
 				}
-					//printf("%lf ", Y[batch][k]);
+				//printf("%lf ", Y[batch][k]);
 			}
-				//printf("\n");
-				//printf("%lf\n", max[batch]);
+			//printf("\n");
+			//printf("%lf\n", max[batch]);
 			for (int k = 0; k < 10; k++) {
 				if (max[batch] == Y[batch][k]) {
 					compare_y[batch][k] = 1;
@@ -477,36 +491,36 @@ int main(int argc, const char * argv[]) {
 
 			}
 			for (int k = 0; k < 10; k++) {
-					//printf("%lf ", compare_y[batch][k]);
+				//printf("%lf ", compare_y[batch][k]);
 			}
-				//printf("\n");
+			//printf("\n");
 
-				//batch_y랑 Y확인
+			//batch_y랑 Y확인
 			for (int label = 0; label < 10; label++) {
-			//	printf("%lf ", batch_y[batch][label]);
+		//		printf("%lf ", batch_y[batch][label]);
 			}
-		//	printf("\n");
+			//printf("\n");
 			for (int label = 0; label < 10; label++) {
-			//	printf("%lf ", compare_y[batch][label]);
+				//printf("%lf ", compare_y[batch][label]);
 			}
 			//printf("\n\n");
-				
 
-				//한 batch 정확도
+
+			//한 batch 정확도
 			for (int label = 0; label < 10; label++) {
 				if (batch_y[batch][label] == 1 && compare_y[batch][label] == 1) {
 					correct++;
 				}
 
 			}
-			
+
 
 
 		}
 		printf("%d\n", correct);
 	}
-	
-	
+
+
 
 	//if (acc >= input_accuracy) {
 
@@ -524,3 +538,5 @@ int main(int argc, const char * argv[]) {
 	system("pause");
 	return 0;
 }
+
+	
