@@ -189,7 +189,7 @@ int main(int argc, const char * argv[]) {
 
 	srand((unsigned int)time(NULL));
 
-	readTrainFile("C:\\Users\\janpa\\Desktop\\train.txt", SIZE_SAMPLES_train);
+	readTrainFile("C:\\Users\\210.117.128.200\\Desktop\\train.txt", SIZE_SAMPLES_train);
 
 	scanf("%lf", &input_accuracy);
 
@@ -201,43 +201,51 @@ int main(int argc, const char * argv[]) {
 	init(V, W);
 
 
-	while (epoch<800) {
+	while (1) {
+		int correct = 0;
 		int a = 0;
 		double acc = 0; //0으로 변경
-		printf("[%d epoch] training...\n", epoch);
+
+		if (epoch % 100 == 0) {
+			printf("[%d epoch] training...\n", epoch);
+		}
+
 		for (int i = 1; i <= iter; i++) {
 			//printf("%d\n", i);
-			double Z[100][21] = { 0, };
-			double Z_error[21] = { 0, };
+			
 			double Z_sigmoid[100][21] = { 0, };
+			
 			double Y[100][10] = { 0, };
 			double Y_sigmoid[100][10] = { 0, };
 			double compare_y[100][10] = { 0, };
 			double max[100] = { 0, };
-
+			double aver_deriv_W[10] = { 0, };
+			
 			double deriv_W[100][10] = { 0, };
 			double deriv_V[100][21] = { 0, };
-			double aver_deriv_W[10] = { 0, };
+			
 
-			int correct = 0;
+			
 			int sum = 0;
 			//printf("%d\n", i);
 			setBatch(i, SIZE_SAMPLES_train);
 
 			//forward
-			while (1) {
+			//while (1) {
 				for (int batch = 0; batch < 100; batch++) {
 					//printf("%d\n", batch);
-
+					
+					
 
 					for (int k = 0; k < 20; k++) {
+						double Z=0;
 						for (int j = 0; j < 101; j++) {
-							Z[batch][k] += batch_x[batch][j] * V[j][k];
+							Z += batch_x[batch][j] * V[j][k];
 						}
 						if (k == 0) {
 							Z_sigmoid[batch][k] = 1;
 						}
-						Z_sigmoid[batch][k + 1] = sigmoid(Z[batch][k]);
+						Z_sigmoid[batch][k + 1] = sigmoid(Z);
 						//printf("%lf ", Z_sigmoid[batch][k]);
 					}
 					//printf("\n\n");
@@ -277,12 +285,15 @@ int main(int argc, const char * argv[]) {
 
 
 					}
-					for (int k = 0; k < 10; k++) {
+					//for (int k = 0; k < 10; k++) {
 						//printf("%lf ", compare_y[batch][k]);
-					}
+
+					//}
 					//printf("\n");
 
 					/*batch_y랑 Y확인
+					printf("%d ", correct);
+					printf("\n");
 					for (int label = 0; label < 10; label++) {
 					printf("%lf ", batch_y[batch][label]);
 					}
@@ -290,18 +301,21 @@ int main(int argc, const char * argv[]) {
 					for (int label = 0; label < 10; label++) {
 					printf("%lf ", compare_y[batch][label]);
 					}
-					printf("\n");
+					printf("\n\n");
 					*/
 
 					//한 batch 정확도
 					for (int label = 0; label < 10; label++) {
 						if (batch_y[batch][label] == 1 && compare_y[batch][label] == 1) {
 							correct++;
+							
 						}
+						
 
 					}
-
-
+				//	printf("%d ", correct);
+				//	printf("\n");
+					
 					//double deriv_W[100][][10] = { 0, };
 					//double deriv_V[100][][21] = { 0, };
 					//double aver_deriv_W[100][10] = { 0, };
@@ -310,45 +324,56 @@ int main(int argc, const char * argv[]) {
 					for (int m = 0; m < 10; m++) {
 						deriv_W[batch][m] = (batch_y[batch][m] - Y_sigmoid[batch][m]) * Y_sigmoid[batch][m] * (1 - Y_sigmoid[batch][m]);
 						aver_deriv_W[m] += deriv_W[batch][m];
+						//printf("%lf ", aver_deriv_W[m]);
+						
 					}
+					//for (int p = 0; p < 21; p++) {
+					//	printf("%lf ", Z_sigmoid[batch][p]);
+					//}
+					
+					//for (int m = 0; m < 10; m++) {
+						//	for (int p = 0; p < 21; p++) {
+						//		aver_deriv_W[m] = aver_deriv_W[m] * Z_sigmoid[batch][p];
+						//	}
 
+						//printf("%lf ", aver_deriv_W[m]);
+
+					//}
+					//printf("\n");
 
 					if (batch == 99) {
+						double Z_error[21] = { 0, };
 						for (int m = 0; m < 10; m++) {
 							aver_deriv_W[m] = aver_deriv_W[m] / 100;
-							//("%lf ", aver_deriv_W[m]);
+							//printf("%lf ", aver_deriv_W[m]);
 						}
 
 						//printf("\n");
 						//V[101][21] W[21][10]
 
+						for (int u = 0; u < 100; u++) {
+							for (int p = 0; p < 21; p++) {
+								for (int k = 0; k < 10; k++) {
+									W[p][k] += 10*ALPHA * aver_deriv_W[k]* Z_sigmoid[u][p];
+									Z_error[p] += aver_deriv_W[k] * W[p][k];
 
-						for (int p = 0; p < 21; p++) {
-							for (int k = 0; k < 10; k++) {
-								W[p][k] = 10 * aver_deriv_W[k] * W[p][k];
-
-								Z_error[p] += aver_deriv_W[k] * W[p][k];
-
-
-
-								//printf("%lf ", W[p][k]);
+									//printf("%lf ",W[p][k]);
+								}
+								//printf("\n");
 							}
-
 							//printf("\n");
 						}
-						//printf("\n");
-
+						//printf("\n\n");
 						for (int k = 0; k < 100; k++) {
 							for (int i = 0; i < 21; i++) {
 								deriv_V[k][i] = Z_error[i] * Z_sigmoid[k][i] * (1 - Z_sigmoid[k][i]);
 							}
 						}
 
-
 						for (int j = 0; j < 100; j++) {
 							for (int n = 0; n < 101; n++) {
 								for (int m = 0; m < 21; m++) {
-									V[n][m] += ALPHA * deriv_V[j][m];
+									V[n][m] += ALPHA * deriv_V[j][m]*batch_x[j][n];
 									//printf("%lf ", V[n][m]);
 								}
 								//printf("\n\n");
@@ -356,18 +381,8 @@ int main(int argc, const char * argv[]) {
 							//printf("\n\n");
 						}
 						//printf("\n");
-
-
-
 					}
-
-
-
-
-
 				}
-
-
 
 				/*기본 입력 정보
 				for (int batch = 0; batch < 100; batch++) {
@@ -389,25 +404,30 @@ int main(int argc, const char * argv[]) {
 
 				//accuracy
 
+				//printf("%d ", correct);
+				//printf("\n");
+			
+			//}
+			//printf("\n");
 
-				if (correct >= input_accuracy) {
-					//	printf("%d\n", correct);
+		}
+		double percent = correct / 40 ;
 
-					break;
-				}
-			}
+		if (epoch % 100 == 0) {
+			printf("    %lf\n", percent);
+		}
 
+		if (percent >= input_accuracy) {
+			break;
 		}
 		epoch++;
 
-
-
 	}
 
-	readTrainFile("C:\\Users\\janpa\\Desktop\\test.txt", SIZE_SAMPLES_test);
-	
-	
-	
+	readTrainFile("C:\\Users\\210.117.128.200\\Desktop\\test.txt", SIZE_SAMPLES_test);
+
+
+
 	iter = SIZE_CLASSES * SIZE_SAMPLES_test / BATCH_SIZE;
 
 
@@ -436,10 +456,10 @@ int main(int argc, const char * argv[]) {
 			//}
 			//("\n");
 			//for (int y = 0; y < 101; y++) {
-//printf("%lf ", batch_x[batch][y]);
+			//printf("%lf ", batch_x[batch][y]);
 
 			//}
-//printf("\n\n");
+			//printf("\n\n");
 
 
 			for (int k = 0; k < 20; k++) {
@@ -497,7 +517,7 @@ int main(int argc, const char * argv[]) {
 
 			//batch_y랑 Y확인
 			for (int label = 0; label < 10; label++) {
-		//		printf("%lf ", batch_y[batch][label]);
+				//		printf("%lf ", batch_y[batch][label]);
 			}
 			//printf("\n");
 			for (int label = 0; label < 10; label++) {
@@ -517,7 +537,7 @@ int main(int argc, const char * argv[]) {
 
 
 		}
-		printf("%d\n", correct);
+		// printf("%d\n", correct);
 	}
 
 
@@ -539,4 +559,3 @@ int main(int argc, const char * argv[]) {
 	return 0;
 }
 
-	
