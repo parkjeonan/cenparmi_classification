@@ -14,7 +14,7 @@ const int BATCH_SIZE = 100;
 const int SIZE_SHUFFLE_1 = 4000;
 const int SIZE_SHUFFLE_1_test = 2000;
 const int SIZE_SHUFFLE_2 = 1000;
-const double ALPHA = 0.01;
+const double ALPHA = 0.3;
 
 double V[101][21] = { 0, };
 double W[21][10] = { 0, };
@@ -179,126 +179,37 @@ int main(int argc, const char * argv[]) {
 
 	double input_accuracy = 0;
 
-
-
 	srand((unsigned int)time(NULL));
 
 	readTrainFile("C:\\Users\\210.117.128.200\\Desktop\\train.txt", SIZE_SAMPLES_train);
 
 	scanf("%lf", &input_accuracy);
 
-
 	int iter = SIZE_CLASSES * SIZE_SAMPLES_train / BATCH_SIZE;
 
 	int epoch = 1;
 
 	init(V, W);
-
-
+	
 	while (1) {
 		int correct = 0;
-		int a = 0;
-		double acc;
+		double aver_deriv_W[41][21][10] = { 0, };
+		double aver_deriv_Z[41][101][21] = { 0, };
 
 		if (epoch % 100 == 0) {
 			printf("training...\n", epoch);
 		}
 
-		for (int i = 1; i <= iter; i++) {
+		for (int i = 1; i <= 30; i++) {
 			double Z_sigmoid[100][21] = { 0, };
 			double Y[100][10] = { 0, };
 			double Y_sigmoid[100][10] = { 0, };
 			double compare_y[100][10] = { 0, };
 			double deriv_W[100][10] = { 0, };
 			double deriv_V[100][21] = { 0, };
-			double aver_deriv_W[21][10] = { 0, };
-			double aver_deriv_Z[101][21] = { 0, };
-
-
-			int sum;
+			
 			setBatch(i, SIZE_SAMPLES_train);
-
-
-			//while (1) {
-			for (int batch = 0; batch < 100; batch++) {
-				
-				//forward
-				for (int k = 1; k < 21; k++) {
-					double Z = 0;
-					for (int j = 0; j < 101; j++) {
-						Z += batch_x[batch][j] * V[j][k];
-					}
-
-					Z_sigmoid[batch][k] = sigmoid(Z);
-				}
-				Z_sigmoid[batch][0] = 1;
-
-				for (int k = 0; k < 10; k++) {
-					for (int j = 0; j < 21; j++) {
-						Y[batch][k] += Z_sigmoid[batch][j] * W[j][k];
-					}
-					Y_sigmoid[batch][k] = sigmoid(Y[batch][k]);
-
-				}
-
-				// backpropagation
-
-
-				// out - target 오류율 계산
-				for (int m = 0; m < 10; m++) {
-					//printf("%d", m);
-					deriv_W[batch][m] = (batch_y[batch][m] - Y_sigmoid[batch][m]) * (1 - Y_sigmoid[batch][m]) * Y_sigmoid[batch][m];
-					//printf("%lf ", deriv_W[batch][m]);
-					for (int q = 0; q < 21; q++) {
-						aver_deriv_W[q][m] += deriv_W[batch][m] * Z_sigmoid[batch][q];
-					}
-				}
-
-				// hidden의 오류율 계산
-				//printf("\n");
-
-				for (int m = 0; m < 21; m++) {
-
-					for (int n = 0; n < 10; n++) {
-						deriv_V[batch][m] += deriv_W[batch][n] * (1 - Z_sigmoid[batch][m]) * Z_sigmoid[batch][m];
-					}
-
-					for (int q = 0; q < 101; q++) {
-						aver_deriv_Z[q][m] += deriv_V[batch][m] * batch_x[batch][q];
-
-					}
-
-				}
-
-				if (batch % 10 == 0) {
-					for (int q = 0; q < 21; q++) {
-						for (int m = 0; m < 10; m++) {
-							aver_deriv_W[q][m] = (double)aver_deriv_W[q][m] / 10;
-							W[q][m] += ALPHA * aver_deriv_W[q][m];
-						}
-
-					}
-
-					for (int q = 0; q < 101; q++) {
-						for (int m = 0; m < 21; m++) {
-							aver_deriv_Z[q][m] = (double)aver_deriv_Z[q][m] / 10;
-							V[q][m] += ALPHA * aver_deriv_Z[q][m];
-						}
-					}
-
-				}
-
-			}
-
-		}
-
-		correct = 0;
-		for (int i = 0; i < iter; i++) {
-			double Z_sigmoid[100][21] = { 0, };
-
-			double Y[100][10] = { 0, };
-			double Y_sigmoid[100][10] = { 0, };
-			double compare_y[100][10] = { 0, };
+			
 
 			double max[100] = { 0, };
 
@@ -307,9 +218,11 @@ int main(int argc, const char * argv[]) {
 					double Z = 0;
 					for (int j = 0; j < 101; j++) {
 						Z += batch_x[batch][j] * V[j][k];
+						
 					}
 
 					Z_sigmoid[batch][k] = sigmoid(Z);
+			
 				}
 				Z_sigmoid[batch][0] = 1;
 
@@ -351,11 +264,52 @@ int main(int argc, const char * argv[]) {
 						correct++;
 					}
 				}
+				
+
+				// backpropagation
+
+				// out - target 오류율 계산
+				for (int m = 0; m < 10; m++) {
+					//printf("%d", m);
+					deriv_W[batch][m] = (batch_y[batch][m] - Y_sigmoid[batch][m]) * (1 - Y_sigmoid[batch][m]) * Y_sigmoid[batch][m];
+					//printf("%lf ", deriv_W[batch][m]);
+					for (int q = 0; q < 21; q++) {
+						aver_deriv_W[i][q][m] += deriv_W[batch][m] * Z_sigmoid[batch][q];
+					}
+				}
+
+				// hidden의 오류율 계산
+	
+				for (int m = 0; m < 21; m++) {
+					for (int n = 0; n < 10; n++) {
+						deriv_V[batch][m] += deriv_W[batch][n] * (1 - Z_sigmoid[batch][m]) * Z_sigmoid[batch][m];
+					}
+					for (int q = 0; q < 101; q++) {
+						aver_deriv_Z[i][q][m] += deriv_V[batch][m] * batch_x[batch][q];
+
+					}
+				}
+			}
+		}
+		
+
+		for (int i = 1; i <= 30; i++) {
+			for (int q = 0; q < 21; q++) {
+				for (int m = 0; m < 10; m++) {
+					aver_deriv_W[i][q][m] = (double)aver_deriv_W[i][q][m] / BATCH_SIZE;
+					W[q][m] += ALPHA * aver_deriv_W[i][q][m];
+				}
+
+			}
+			for (int q = 0; q < 101; q++) {
+				for (int m = 0; m < 21; m++) {
+					aver_deriv_Z[i][q][m] = (double)aver_deriv_Z[i][q][m] / BATCH_SIZE;
+					V[q][m] += ALPHA * aver_deriv_Z[i][q][m];
+				}
 			}
 		}
 
-		double percent = (double)correct / 40;
-
+		double percent = (double)correct / 30;
 
 		if (epoch % 100 == 0) {
 			printf("[%d Epoch] %lf\n", epoch, percent);
@@ -366,15 +320,150 @@ int main(int argc, const char * argv[]) {
 			break;
 		}
 		epoch++;
+		
 	}
 
 
+	
+	while (1) {
+		int correct = 0;
+		double aver_deriv_W[41][21][10] = { 0, };
+		double aver_deriv_Z[41][101][21] = { 0, };
+
+		if (epoch % 100 == 0) {
+			printf("training...\n", epoch);
+		}
+
+		for (int i = 31; i <= iter; i++) {
+			double Z_sigmoid[100][21] = { 0, };
+			double Y[100][10] = { 0, };
+			double Y_sigmoid[100][10] = { 0, };
+			double compare_y[100][10] = { 0, };
+			double deriv_W[100][10] = { 0, };
+			double deriv_V[100][21] = { 0, };
+
+			setBatch(i, SIZE_SAMPLES_train);
+
+
+			double max[100] = { 0, };
+
+			for (int batch = 0; batch < BATCH_SIZE; batch++) {
+				for (int k = 1; k < 21; k++) {
+					double Z = 0;
+					for (int j = 0; j < 101; j++) {
+						Z += batch_x[batch][j] * V[j][k];
+
+					}
+
+					Z_sigmoid[batch][k] = sigmoid(Z);
+
+				}
+				Z_sigmoid[batch][0] = 1;
+
+				for (int k = 0; k < 10; k++) {
+					for (int j = 0; j < 21; j++) {
+						Y[batch][k] += Z_sigmoid[batch][j] * W[j][k];
+					}
+					Y_sigmoid[batch][k] = sigmoid(Y[batch][k]);
+
+				}
+
+
+				// one hot encoding
+				for (int k = 0; k < 10; k++) {
+
+					if (k == 0) {
+						max[batch] = Y_sigmoid[batch][k];
+					}
+					else {
+						if (max[batch] < Y_sigmoid[batch][k]) {
+							max[batch] = Y_sigmoid[batch][k];
+						}
+					}
+				}
+
+				// compare target - output(one hot encoding)
+				for (int k = 0; k < 10; k++) {
+					if (max[batch] == Y_sigmoid[batch][k]) {
+						compare_y[batch][k] = 1;
+					}
+					else {
+						compare_y[batch][k] = 0;
+					}
+				}
+
+				//한 batch 정확도
+				for (int label = 0; label < 10; label++) {
+					if (batch_y[batch][label] == 1 && compare_y[batch][label] == 1) {
+						correct++;
+					}
+				}
+
+
+				// backpropagation
+
+				// out - target 오류율 계산
+				for (int m = 0; m < 10; m++) {
+					//printf("%d", m);
+					deriv_W[batch][m] = (batch_y[batch][m] - Y_sigmoid[batch][m]) * (1 - Y_sigmoid[batch][m]) * Y_sigmoid[batch][m];
+					//printf("%lf ", deriv_W[batch][m]);
+					for (int q = 0; q < 21; q++) {
+						aver_deriv_W[i][q][m] += deriv_W[batch][m] * Z_sigmoid[batch][q];
+					}
+				}
+
+				// hidden의 오류율 계산
+
+				for (int m = 0; m < 21; m++) {
+					for (int n = 0; n < 10; n++) {
+						deriv_V[batch][m] += deriv_W[batch][n] * (1 - Z_sigmoid[batch][m]) * Z_sigmoid[batch][m];
+					}
+					for (int q = 0; q < 101; q++) {
+						aver_deriv_Z[i][q][m] += deriv_V[batch][m] * batch_x[batch][q];
+
+					}
+				}
+			}
+		}
+
+
+		for (int i = 31; i <= iter; i++) {
+			for (int q = 0; q < 21; q++) {
+				for (int m = 0; m < 10; m++) {
+					aver_deriv_W[i][q][m] = (double)aver_deriv_W[i][q][m] / BATCH_SIZE;
+					W[q][m] += ALPHA * aver_deriv_W[i][q][m];
+				}
+
+			}
+			for (int q = 0; q < 101; q++) {
+				for (int m = 0; m < 21; m++) {
+					aver_deriv_Z[i][q][m] = (double)aver_deriv_Z[i][q][m] / BATCH_SIZE;
+					V[q][m] += ALPHA * aver_deriv_Z[i][q][m];
+				}
+			}
+		}
+
+		double percent = (double)correct / 10;
+
+		if (epoch % 100 == 0) {
+			printf("[%d Epoch] %lf\n", epoch, percent);
+		}
+
+		if (percent >= input_accuracy) {
+			printf("[Train Accuracy] %lf\n", percent);
+			break;
+		}
+		epoch++;
+
+	}
+	
 	readTrainFile("C:\\Users\\210.117.128.200\\Desktop\\test.txt", SIZE_SAMPLES_test);
 
 	iter = SIZE_CLASSES * SIZE_SAMPLES_test / BATCH_SIZE;
 
 	int correct = 0;
-	for (int i = 0; i < iter; i++) {
+	for (int i = 1; i <= iter; i++) {
+		setBatch(i, SIZE_SAMPLES_test);
 		double Z_sigmoid[100][21] = { 0, };
 
 		double Y[100][10] = { 0, };
@@ -435,15 +524,15 @@ int main(int argc, const char * argv[]) {
 		}
 
 
+	
+
+
 		
-		if (i == iter) {
-			double percent = (double)correct / 20;
-			printf("%lf\n", percent);
-		}
-
-
-		system("pause");
-		return 0;
 	}
+
+	double percent = (double)correct / 20;
+	printf("%lf\n", percent);
+	system("pause");
+	return 0;
 
 }
